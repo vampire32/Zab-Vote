@@ -5,9 +5,9 @@ const UserController = require('../Controller/userController');
 
 router.get('/', UserController.getUser);
 router.get('/:rollno', UserController.getUserByRollno);
+router.get('/fingerprint/:fingerprint', UserController.getUserByfingerprint);
 
-// Route to add a new candidate
 router.post('/', UserController.addUser);
-
+router.post('/:rollno', UserController.updateUser);
 
 module.exports = router;

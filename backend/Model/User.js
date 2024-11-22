@@ -5,6 +5,7 @@ const UserSchema = new mongoose.Schema({
   lastname: { type: String, required: true },
   rollno: { type: String, required: true },
   phoneno: { type: String, required: true},
+  fingerprint: { type: String},
   
 });
 
