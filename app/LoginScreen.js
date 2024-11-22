@@ -15,6 +15,7 @@ import * as LocalAuthentication from "expo-local-authentication";
 import * as Application from "expo-application";
 import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { fetchText } from "react-native-svg";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -76,108 +77,24 @@ export default function LoginScreen() {
         return;
       }
 
-      // Check for fingerprint changes
-      const newHash = await generateFingerprintHash();
-      const storedHash = await AsyncStorage.getItem("fingerprintHash");
+     
+   
+     
 
-      // if (storedHash && newHash !== storedHash) {
-      //   Alert.alert(
-      //     "Fingerprint Changed",
-      //     "Detected changes in registered fingerprints. Please re-authenticate.",
-      //     [
-      //       {
-      //         text: "Cancel",
-      //         style: "cancel",
-      //       },
-      //       {
-      //         text: "Re-authenticate",
-      //         onPress: () => registerNewFingerprint(newHash),
-      //       },
-      //     ]
-      //   );
-      // }
-
+   
 
     } catch (error) {
       console.error("Error checking fingerprint support:", error);
     }
   };
 
-  const registerNewFingerprint = async (newHash) => {
-    try {
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Verify your new fingerprint",
-        disableDeviceFallback: true,
-        cancelLabel: "Cancel",
-        requireConfirmation: false,
-        authenticationType: LocalAuthentication.AuthenticationType.FINGERPRINT,
-      });
-
-      if (result.success) {
-        // Store new fingerprint hash
-        await AsyncStorage.setItem("fingerprintHash", newHash);
-        setFingerprintHash(newHash);
-
-        // Store timestamp of registration
-        const timestamp = new Date().toISOString();
-        await AsyncStorage.setItem("fingerprintRegisteredAt", timestamp);
-
-        // Store additional info if needed
-        const fingerprintInfo = {
-          hash: newHash,
-          registeredAt: timestamp,
-          deviceId: await Application.androidId,
-          // Add any other relevant info
-        };
-
-        await AsyncStorage.setItem(
-          "fingerprintInfo",
-          JSON.stringify(fingerprintInfo)
-        );
-
-        await updateFingerprintOnServer(fingerprintInfo);
-
-        Alert.alert("Success", "New fingerprint registered successfully!");
-      }
-    } catch (error) {
-      console.error("Error registering new fingerprint:", error);
-      Alert.alert(
-        "Registration Failed",
-        "Failed to register new fingerprint. Please try again."
-      );
-    }
-  };
-
-  const updateFingerprintOnServer = async (fingerprintInfo) => {
-    try {
-      console.log("Fingerprint info updated on server", fingerprintInfo);
-    } catch (error) {
-      console.error("Error updating fingerprint on server:", error);
-    }
-  };
 
   const handleFingerPrintAuth = async () => {
     try {
      
-      const currentHash = await generateFingerprintHash();
+      const currentHash = await AsyncStorage.getItem("fingerprint");
 
-      // if (fingerprintHash && currentHash !== fingerprintHash) {
-      //   Alert.alert(
-      //     "Fingerprint Changed",
-      //     "Detected changes in registered fingerprints. Please re-authenticate.",
-      //     [
-      //       {
-      //         text: "Cancel",
-      //         style: "cancel",
-      //       },
-      //       {
-      //         text: "Re-authenticate",
-      //         onPress: () => registerNewFingerprint(currentHash),
-      //       },
-      //     ]
-      //   );
-      //   return;
-      // }
+   
  
 
       const result = await LocalAuthentication.authenticateAsync({
@@ -190,13 +107,25 @@ export default function LoginScreen() {
       });
 
       if (result.success) {
-        console.log("Fingerprint authentication successful");
-        console.log("Authenticated Fingerprint ID (Hash):", currentHash);
-
-        const timestamp = new Date().toISOString();
-        await AsyncStorage.setItem("fingerprintLastUsed", timestamp);
-
-        router.push("/OTPScreen");
+        const response = await fetch(
+          `http://192.168.100.17:3000/api/users/fingerprint/${currentHash}`, 
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        if(response.ok){
+          router.push("/OTPScreen");
+        }else{
+          Alert.alert(
+            "Authentication Failed",
+            "Fingerprint Firstly register your device by login trough the form"
+          );
+        }
+    
+       
       } else if (result.error === "user_cancel") {
         console.log("User cancelled fingerprint authentication");
       } else {
@@ -215,36 +144,82 @@ export default function LoginScreen() {
   };
   const handleEnterPress = async () => {
     try {
-      const storedHash = await AsyncStorage.getItem("fingerprintHash");
+      //  AsyncStorage.removeItem('fingerprint');
+      const storedHash = await AsyncStorage.getItem("fingerprint");
   
+      // If no stored fingerprint exists, proceed to generate a new one
       if (!storedHash) {
- 
+        console.log("No stored fingerprint found. Generating a new one...");
         const newHash = await generateFingerprintHash();
   
-        if (newHash) {
-    
-          await AsyncStorage.setItem("fingerprintHash", newHash);
-          Alert.alert(
-            "Fingerprint Registered",
-            "Your fingerprint has been registered. You can now use it to log in."
-          );
-        } else {
-        
-          Alert.alert(
-            "Error",
-            "Unable to generate fingerprint hash. Please try again."
-          );
+        if (!newHash) {
+          Alert.alert("Error", "Unable to generate fingerprint hash. Please try again.");
           return;
         }
-      }
   
-    
-      router.push("/OTPScreen");
+        // Send the new fingerprint hash to the server and associate it with the user
+        const registerResponse = await fetch(`http://192.168.100.17:3000/api/users/${regNumber}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ fingerprint: newHash }),
+        });
+  
+        if (!registerResponse.ok) {
+          const errorData = await registerResponse.json();
+          console.error("Error during registration:", errorData);
+          Alert.alert("Error", errorData.msg || "Failed to register fingerprint. Please try again.");
+          return;
+        }
+  
+       
+        const registerResponseText = await registerResponse.text();
+        const registerData = JSON.parse(registerResponseText);
+        const phoneNumber = registerData.user.phoneno;
+       
+  
+        // Save the new fingerprint hash locally
+        await AsyncStorage.setItem("fingerprint", newHash);
+  
+        Alert.alert(
+          "Fingerprint Registered",
+          "Your device fingerprint has been registered. You can now use it to log in."
+        );
+  
+        // Send an OTP request using the retrieved phone number
+        const otpResponse = await fetch('http://192.168.100.17:3000/api/request-otp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ phoneNumber }),
+        });
+  
+        if (!otpResponse.ok) {
+          const otpErrorData = await otpResponse.json();
+          console.error("Error during OTP request:", otpErrorData);
+          Alert.alert("Error", otpErrorData.msg || "Failed to send OTP. Please try again.");
+          return;
+        }
+  
+        // OTP sent successfully, navigate to the OTP screen
+        const otpData = await otpResponse.json();
+        console.log("OTP Response:", otpData);
+  
+        await AsyncStorage.setItem("phoneNumber", phoneNumber);
+  
+        Alert.alert("Success", "OTP sent successfully!");
+        router.push("/OTPScreen");
+      } else {
+        console.log("Stored fingerprint hash found:", storedHash);
+      }
     } catch (error) {
       console.error("Error during Enter button press:", error);
-      Alert.alert("Error", "An error occurred. Please try again.");
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
     }
   };
+  
   
 
   return (
@@ -270,7 +245,9 @@ export default function LoginScreen() {
           />
         </View>
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleEnterPress}>
+        <TouchableOpacity style={styles.loginButton} onPress={()=>{
+          handleEnterPress()
+        }}>
           <Text style={styles.loginButtonText}>Enter</Text>
         </TouchableOpacity>
 
