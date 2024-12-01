@@ -5,7 +5,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function SplashScreen() {
   const router = useRouter();
   const getPhoneNumber=async()=>{
-    const phoneNumber= await AsyncStorage.getItem('phoneNumber');
+    
+    const phoneNumber= await AsyncStorage.getItem('fingerprint');
     const otp=await AsyncStorage.getItem('otp');
     if(!phoneNumber && !otp){
       router.push("/LoginScreen");
@@ -16,6 +17,7 @@ export default function SplashScreen() {
   useEffect(() => {
     
     const timer = setTimeout(() => {
+      // router.push("/LoginScreen");
       getPhoneNumber(); 
     }, 5000);
 
@@ -32,7 +34,7 @@ export default function SplashScreen() {
         style={styles.logo}
       />
  
-      <Text style={styles.appName}>Votely</Text>
+      <Text style={styles.appName}>Zab Vote</Text>
     </View>
   </View>
   );

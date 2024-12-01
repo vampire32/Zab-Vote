@@ -1,8 +1,8 @@
 // controllers/voteController.js
-import Vote from '../Model/Vote.js';
-import { Types } from 'mongoose';
+const Vote = require('../Model/Vote.js');
+const { Types } = require('mongoose');
 
-export const voteController = {
+ const voteController = {
   // Cast a vote
   castVote: async (req, res) => {
     try {
@@ -116,3 +116,5 @@ export const voteController = {
     }
   }
 };
+
+module.exports = voteController;

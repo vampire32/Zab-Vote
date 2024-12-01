@@ -1,13 +1,14 @@
 // routes/voteRoutes.js
-import express from 'express';
-import { voteController } from '../controllers/voteController.js';
-import { authMiddleware } from '../middleware/authMiddleware.js'; // Assuming you have auth middleware
-
+const express = require('express');
 const router = express.Router();
+const voteController =require('../Controller/voteController');
+
+
+
 
 // Protected routes
-router.post('/cast', authMiddleware, voteController.castVote);
-router.get('/status/:userId', authMiddleware, voteController.getVoteStatus);
-router.get('/stats', authMiddleware, voteController.getVotingStats);
+router.post('/cast', voteController.castVote);
+router.get('/status/:userId',  voteController.getVoteStatus);
+router.get('/stats',  voteController.getVotingStats);
 
-export default router;
+module.exports = router;

@@ -1,17 +1,21 @@
 import React from 'react'
 import { Text, View,StyleSheet,Image, Pressable } from 'react-native'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+;
 const Profile = () => {
+  const logout=()=>{
+AsyncStorage.removeItem('phoneNumber');
+AsyncStorage.removeItem('fingerprint');
+AsyncStorage.removeItem('otp');
+
+  }
   return (
    
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
-        <Image
-          source={{ uri: 'https://via.placeholder.com/50' }} // Placeholder profile image
-          style={styles.profileImage}
-        />
+    
         <View>
           <Text style={styles.profileName}>Luis Milice</Text>
           <Text style={styles.profileRole}>voter</Text>
@@ -22,7 +26,7 @@ const Profile = () => {
         <View style={styles.iconsBackground}>
         <MaterialIcons name="logout" size={40} color="black" />
         </View>
-        <Pressable>
+        <Pressable onPress={logout} >
         <Text style={styles.logoutText}>Logout</Text>
         </Pressable>
         

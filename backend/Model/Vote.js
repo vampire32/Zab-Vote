@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const voteSchema = new mongoose.Schema({
   user: {
@@ -23,4 +23,4 @@ const voteSchema = new mongoose.Schema({
 voteSchema.index({ user: 1 }, { unique: true });
 
 const Vote = mongoose.model('Vote', voteSchema);
-export default Vote;
+module.exports= Vote;

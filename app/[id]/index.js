@@ -1,16 +1,75 @@
 import { useLocalSearchParams } from 'expo-router';
 import React,{useState} from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import ConfirmationModal from '../components/ConfirmationModal';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function CandidateProfile() {
   const router = useRouter();
   const { candidate } = useLocalSearchParams();
   const [modalVisible, setModalVisible] = useState(false);
   const candidateData = JSON.parse(candidate);
-  const handleConfirm = () => {
-    // Handle confirmation action
+
+
+  const getUser=async()=>{
+    const phoneNumber= await AsyncStorage.getItem('phoneNumber');
+    
+   
+     try {
+      const response = await fetch(
+        `http://192.168.100.17:3000/api/users/phone/${phoneNumber}`, 
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      if(response.ok){
+        const userData = await response.json();
+        
+        return userData;
+  
+      }else{
+        return null;
+      }
+     } catch (error) {
+      console.log(error);
+      
+     }
+  }
+  
+  const voteCasting = async() => {
+    const userData=await getUser();
+   const userID=userData._id;
+   const candidateID=candidateData._id;
+   try {
+    const voteResponse = await fetch('http://192.168.100.17:3000/api/vote/cast', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        userId:userID,
+        candidateId:candidateID
+  
+       }),
+    });
+  
+    if (voteResponse.ok) {
+   
+      Alert.alert('You have successfully voted for ' + candidateData.name);
+    } else if (voteResponse.status === 400) {
+   
+      Alert.alert("You have already voted for this candidate");
+    }
+   } catch (error) {
+    console.log(error);
+    
+   }
+
     setModalVisible(false);
   };
   return (
@@ -40,8 +99,9 @@ export default function CandidateProfile() {
         </View>
         <ConfirmationModal
         visible={modalVisible}
-        onConfirm={handleConfirm}
+        onConfirm={voteCasting}
         onCancel={() => setModalVisible(false)}
+        message={'Are you sure? Your vote cannot be changed'}
       />
     </ScrollView>
   );

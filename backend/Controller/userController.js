@@ -23,6 +23,18 @@ exports.getUserByRollno = async (req, res) => {
     res.status(500).json({ msg: err.message }); 
   }
 };
+exports.getUserByPhone = async (req, res) => {
+  const { phoneno } = req.params; 
+  try {
+    const user = await User.findOne({ phoneno  }); 
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" }); 
+    }
+    res.json(user); // Send the found user
+  } catch (err) {
+    res.status(500).json({ msg: err.message }); 
+  }
+};
 exports.getUserByfingerprint = async (req, res) => {
   const { fingerprint } = req.params; 
   try {

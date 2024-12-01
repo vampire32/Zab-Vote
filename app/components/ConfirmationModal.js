@@ -3,7 +3,7 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'rea
 
 const { width } = Dimensions.get('window');
 
-const ConfirmationModal = ({ visible, onConfirm, onCancel, message = "Are you sure? Your vote cannot be changed." }) => {
+const ConfirmationModal = ({ visible, onConfirm, onCancel, message}) => {
   return (
     <Modal
       animationType="fade"
